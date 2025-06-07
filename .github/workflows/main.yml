@@ -8,6 +8,7 @@ on:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    environment: os 
     steps:
       - name: Clonar el repositorio
         uses: actions/checkout@v3
