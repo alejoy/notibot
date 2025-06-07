@@ -28,7 +28,9 @@ if not OPENROUTER_API_KEY:
 
 logger.info("✅ Variables de entorno cargadas correctamente")
 
-DESTINATARIOS = "general": os.getenv("DESTINATARIO_GENERAL")
+DESTINATARIOS = {
+    "general": os.getenv("DESTINATARIO_GENERAL")
+}
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
