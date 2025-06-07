@@ -25,4 +25,4 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           DESTINATARIO_GENERAL: ${{ secrets.DESTINATARIO_GENERAL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: python bot.py
+        run: python main.py
