@@ -28,8 +28,6 @@ if not OPENROUTER_API_KEY:
 
 logger.info("✅ Variables de entorno cargadas correctamente")
 
-DESTINATARIOS = os.getenv("DESTINATARIO_GENERAL")
-
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 }
@@ -288,7 +286,7 @@ def ejecutar_bot():
                           f"\n\n🔗 {link}"
 
                 # Enviar a chat neutral como referencia
-                chat_id = DESTINATARIOS.get("neutral informativo")
+                chat_id = os.getenv("DESTINATARIO_GENERAL")
                 if chat_id:
                     if enviar_telegram(mensaje, chat_id):
                         print("✅ Mensaje enviado correctamente")
