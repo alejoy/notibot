@@ -82,6 +82,16 @@ TONOS = {
 TONOS_POSIBLES = ["libertario", "crítico al neoliberalismo", "neutral informativo"]
 
 # --- FUNCIONES ---
+
+SUBSCRIBERS_FILE = "subscribers.txt"
+
+def cargar_chat_ids():
+    """Lee los chat_id suscriptos desde un archivo de texto"""
+    if os.path.exists(SUBSCRIBERS_FILE):
+        with open(SUBSCRIBERS_FILE, "r") as f:
+            return [line.strip() for line in f if line.strip()]
+    return []
+    
 def enviar_telegram(mensaje, chat_id):
     """Envía un mensaje por Telegram"""
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -255,6 +265,11 @@ def ejecutar_bot():
     Función principal que ejecuta el bot
     """
     print("🤖 Iniciando bot de noticias...")
+
+    suscriptores = cargar_chat_ids()
+    if not suscriptores:
+        print("⚠️ No hay suscriptores registrados en subscribers.txt")
+        return
     
     for sitio in SITIOS:
         print(f"\n🌐 Procesando sitio: {sitio['nombre']}")
@@ -285,17 +300,14 @@ def ejecutar_bot():
                           "\n\n".join(resumenes) + \
                           f"\n\n🔗 {link}"
 
-                # Enviar a chat neutral como referencia
-                chat_id = os.getenv("DESTINATARIO_GENERAL")
-                if chat_id:
+                # Enviar a cada suscriptor
+                for chat_id in suscriptores:
                     if enviar_telegram(mensaje, chat_id):
-                        print("✅ Mensaje enviado correctamente")
+                        print(f"✅ Enviado a {chat_id}")
                     else:
-                        print("❌ Error al enviar mensaje")
+                        print(f"❌ Falló envío a {chat_id}")
                 
-                # Pausa entre artículos para no saturar APIs
                 time.sleep(5)
-                
             else:
                 print("⚠️ No se pudo extraer contenido del artículo.")
     
