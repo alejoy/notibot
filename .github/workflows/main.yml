@@ -13,12 +13,6 @@ jobs:
       - name: Clonar el repositorio
         uses: actions/checkout@v3
 
-      - name: Descargar lista de suscriptores (si existe)
-        continue-on-error: true
-        uses: actions/download-artifact@v3
-        with:
-          name: subscribers
-
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
