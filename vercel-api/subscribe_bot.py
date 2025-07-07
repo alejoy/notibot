@@ -8,6 +8,10 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "✅ Webhook activo y funcionando"}
+    
 @app.post("/")
 async def telegram_webhook(request: Request):
     data = await request.json()
