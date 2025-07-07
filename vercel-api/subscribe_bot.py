@@ -59,6 +59,10 @@ async def telegram_webhook(request: Request):
                 respuesta = "Error al procesar la suscripción, por favor intenta más tarde."
 
         # Enviar mensaje a Telegram
+        print(f"🔍 URL: https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN[:10]}.../sendMessage")
+print(f"🔍 Chat ID: {chat_id}")
+print(f"🔍 Mensaje: {respuesta}")
+
         resp_telegram = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
             data={"chat_id": chat_id, "text": respuesta}
