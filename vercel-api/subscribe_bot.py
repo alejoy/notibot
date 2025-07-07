@@ -23,12 +23,15 @@ async def telegram_webhook(request: Request):
 
     chat = message.get("chat", {})
     chat_id = str(chat.get("id"))
+    first_name = chat.get("first_name") or ""
+    username = chat.get("username") or ""
+    user_display = first_name or username or "usuario"
     text = message.get("text", "")
 
     if text in ("/start", "/subscribe"):
-        respuesta = "Ya estás suscripto."
+        respuesta = f"Ya estás suscripto, {user_display}."
 
-        # Verificar si ya está suscripto
+        # Consultar si ya está suscripto
         r = requests.get(
             f"{SUPABASE_URL}/rest/v1/subscribers?chat_id=eq.{chat_id}",
             headers={
@@ -36,8 +39,9 @@ async def telegram_webhook(request: Request):
                 "Authorization": f"Bearer {SUPABASE_KEY}"
             }
         )
+
         if r.status_code == 200 and len(r.json()) == 0:
-            # No existe, lo agregamos
+            # No está, lo agregamos con el nombre
             insert = requests.post(
                 f"{SUPABASE_URL}/rest/v1/subscribers",
                 headers={
@@ -45,30 +49,18 @@ async def telegram_webhook(request: Request):
                     "Authorization": f"Bearer {SUPABASE_KEY}",
                     "Content-Type": "application/json"
                 },
-                json={"chat_id": chat_id}
+                json={"chat_id": chat_id, "nombre": user_display}
             )
-            print(f"Insert status: {insert.status_code}, response: {insert.text}")
+
             if insert.status_code == 201:
-                respuesta = "¡Suscripción confirmada! Recibirás las noticias."
+                respuesta = f"¡Suscripción confirmada, {user_display}! Recibirás las noticias."
 
-        # Enviar respuesta por Telegram
-        try:
-            url_telegram = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN.strip()}/sendMessage"
-            payload = {
-                "chat_id": chat_id,
-                "text": respuesta
-            }
-
-            print(f"📡 Enviando mensaje a: {url_telegram}")
-            print(f"📨 Datos: {payload}")
-
-            resp_telegram = requests.post(url_telegram, data=payload)
-            print(f"✅ Estado respuesta Telegram: {resp_telegram.status_code}")
-            print(f"🧾 Respuesta completa: {resp_telegram.text}")
-
-            if resp_telegram.status_code != 200:
-                print("⚠️ Error al enviar mensaje de Telegram")
-        except Exception as e:
-            print(f"❌ Excepción al enviar mensaje de Telegram: {e}")
+        # Enviar respuesta
+        resp_telegram = requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data={"chat_id": chat_id, "text": respuesta}
+        )
+        print(f"Telegram sendMessage status: {resp_telegram.status_code}")
 
     return {"ok": True}
+
