@@ -6,7 +6,7 @@ app = FastAPI()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 @app.get("/")
 def root():
@@ -28,7 +28,7 @@ async def telegram_webhook(request: Request):
     if text in ("/start", "/subscribe"):
         respuesta = "Ya estás suscripto."
 
-        # Verificar suscripción existente
+        # Verificar si ya está suscripto
         r = requests.get(
             f"{SUPABASE_URL}/rest/v1/subscribers?chat_id=eq.{chat_id}",
             headers={
@@ -36,42 +36,24 @@ async def telegram_webhook(request: Request):
                 "Authorization": f"Bearer {SUPABASE_KEY}"
             }
         )
-        if r.status_code != 200:
-            print(f"Error consultando suscriptores: {r.status_code} {r.text}")
-            return {"ok": False}
-
-        if len(r.json()) == 0:
-            # Insertar nuevo suscriptor
+        if r.status_code == 200 and len(r.json()) == 0:
+            # No existe, lo agregamos
             insert = requests.post(
                 f"{SUPABASE_URL}/rest/v1/subscribers",
                 headers={
                     "apikey": SUPABASE_KEY,
                     "Authorization": f"Bearer {SUPABASE_KEY}",
-                    "Content-Type": "application/json",
-                    "Prefer": "return=representation"
+                    "Content-Type": "application/json"
                 },
                 json={"chat_id": chat_id}
             )
             print(f"Insert status: {insert.status_code}, response: {insert.text}")
             if insert.status_code == 201:
                 respuesta = "¡Suscripción confirmada! Recibirás las noticias."
-            else:
-                respuesta = "Error al procesar la suscripción, por favor intenta más tarde."
-
-        # Enviar mensaje a Telegram
-        print(f"🔍 URL: https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN[:10]}.../sendMessage")
-print(f"🔍 Chat ID: {chat_id}")
-print(f"🔍 Mensaje: {respuesta}")
-
-        url_telegram = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN.strip()}/sendMessage"
-payload = {
-    "chat_id": chat_id,
-    "text": respuesta
-}
 
         # Enviar respuesta por Telegram
         try:
-            url_telegram = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            url_telegram = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN.strip()}/sendMessage"
             payload = {
                 "chat_id": chat_id,
                 "text": respuesta
@@ -88,6 +70,5 @@ payload = {
                 print("⚠️ Error al enviar mensaje de Telegram")
         except Exception as e:
             print(f"❌ Excepción al enviar mensaje de Telegram: {e}")
-
 
     return {"ok": True}
