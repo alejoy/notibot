@@ -26,12 +26,13 @@ async def telegram_webhook(request: Request):
     first_name = chat.get("first_name") or ""
     username = chat.get("username") or ""
     user_display = first_name or username or "usuario"
-    text = message.get("text", "")
+    text = message.get("text", "").lower()
 
+    # --- COMANDO DE SUSCRIPCIÓN ---
     if text in ("/start", "/subscribe"):
         respuesta = f"Ya estás suscripto, {user_display}."
 
-        # Consultar si ya está suscripto
+        # Consultar si ya está en Supabase
         r = requests.get(
             f"{SUPABASE_URL}/rest/v1/subscribers?chat_id=eq.{chat_id}",
             headers={
@@ -41,26 +42,10 @@ async def telegram_webhook(request: Request):
         )
 
         if r.status_code == 200 and len(r.json()) == 0:
-            # No está, lo agregamos con el nombre
+            # No está, lo agregamos
             insert = requests.post(
                 f"{SUPABASE_URL}/rest/v1/subscribers",
                 headers={
                     "apikey": SUPABASE_KEY,
                     "Authorization": f"Bearer {SUPABASE_KEY}",
                     "Content-Type": "application/json"
-                },
-                json={"chat_id": chat_id, "nombre": user_display}
-            )
-
-            if insert.status_code == 201:
-                respuesta = f"¡Suscripción confirmada, {user_display}! Recibirás las noticias."
-
-        # Enviar respuesta
-        resp_telegram = requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            data={"chat_id": chat_id, "text": respuesta}
-        )
-        print(f"Telegram sendMessage status: {resp_telegram.status_code}")
-
-    return {"ok": True}
-
