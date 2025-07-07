@@ -28,6 +28,7 @@ async def telegram_webhook(request: Request):
     if text in ("/start", "/subscribe"):
         respuesta = "Ya estás suscripto."
 
+        # Verificar suscripción existente
         r = requests.get(
             f"{SUPABASE_URL}/rest/v1/subscribers?chat_id=eq.{chat_id}",
             headers={
@@ -35,22 +36,33 @@ async def telegram_webhook(request: Request):
                 "Authorization": f"Bearer {SUPABASE_KEY}"
             }
         )
-        if r.status_code == 200 and len(r.json()) == 0:
+        if r.status_code != 200:
+            print(f"Error consultando suscriptores: {r.status_code} {r.text}")
+            return {"ok": False}
+
+        if len(r.json()) == 0:
+            # Insertar nuevo suscriptor
             insert = requests.post(
                 f"{SUPABASE_URL}/rest/v1/subscribers",
                 headers={
                     "apikey": SUPABASE_KEY,
                     "Authorization": f"Bearer {SUPABASE_KEY}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Prefer": "return=representation"
                 },
                 json={"chat_id": chat_id}
             )
+            print(f"Insert status: {insert.status_code}, response: {insert.text}")
             if insert.status_code == 201:
                 respuesta = "¡Suscripción confirmada! Recibirás las noticias."
+            else:
+                respuesta = "Error al procesar la suscripción, por favor intenta más tarde."
 
-        requests.post(
+        # Enviar mensaje a Telegram
+        resp_telegram = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
             data={"chat_id": chat_id, "text": respuesta}
         )
+        print(f"Telegram sendMessage status: {resp_telegram.status_code}")
 
     return {"ok": True}
