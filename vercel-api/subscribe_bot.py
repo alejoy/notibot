@@ -71,7 +71,7 @@ payload = {
 
         # Enviar respuesta por Telegram
         try:
-            url_telegram = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN.strip()}/sendMessage"
+            url_telegram = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
             payload = {
                 "chat_id": chat_id,
                 "text": respuesta
