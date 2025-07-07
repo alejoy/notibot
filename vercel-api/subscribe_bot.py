@@ -5,16 +5,17 @@ from fastapi import FastAPI, Request
 app = FastAPI()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 @app.get("/")
 def root():
     return {"status": "ok", "message": "✅ Webhook activo y funcionando"}
-    
+
 @app.post("/")
 async def telegram_webhook(request: Request):
     data = await request.json()
+    print("📩 Datos recibidos del webhook:", data)
 
     message = data.get("message")
     if not message:
@@ -27,7 +28,6 @@ async def telegram_webhook(request: Request):
     if text in ("/start", "/subscribe"):
         respuesta = "Ya estás suscripto."
 
-        # Verificamos si ya está en Supabase
         r = requests.get(
             f"{SUPABASE_URL}/rest/v1/subscribers?chat_id=eq.{chat_id}",
             headers={
@@ -36,7 +36,6 @@ async def telegram_webhook(request: Request):
             }
         )
         if r.status_code == 200 and len(r.json()) == 0:
-            # No existe, lo agregamos
             insert = requests.post(
                 f"{SUPABASE_URL}/rest/v1/subscribers",
                 headers={
@@ -49,9 +48,9 @@ async def telegram_webhook(request: Request):
             if insert.status_code == 201:
                 respuesta = "¡Suscripción confirmada! Recibirás las noticias."
 
-        # Enviar respuesta por Telegram
         requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
             data={"chat_id": chat_id, "text": respuesta}
         )
+
     return {"ok": True}
