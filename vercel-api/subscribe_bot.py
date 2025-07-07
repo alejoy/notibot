@@ -69,17 +69,25 @@ payload = {
     "text": respuesta
 }
 
-try:
-    print(f"📡 Enviando mensaje a: {url_telegram}")
-    print(f"📨 Datos: {payload}")
+        # Enviar respuesta por Telegram
+        try:
+            url_telegram = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN.strip()}/sendMessage"
+            payload = {
+                "chat_id": chat_id,
+                "text": respuesta
+            }
 
-    resp_telegram = requests.post(url_telegram, data=payload)
-    print(f"✅ Estado respuesta Telegram: {resp_telegram.status_code}")
-    print(f"🧾 Respuesta completa: {resp_telegram.text}")
+            print(f"📡 Enviando mensaje a: {url_telegram}")
+            print(f"📨 Datos: {payload}")
 
-    if resp_telegram.status_code != 200:
-        print("⚠️ Error al enviar mensaje de Telegram")
-except Exception as e:
-    print(f"❌ Excepción al enviar mensaje de Telegram: {e}")
+            resp_telegram = requests.post(url_telegram, data=payload)
+            print(f"✅ Estado respuesta Telegram: {resp_telegram.status_code}")
+            print(f"🧾 Respuesta completa: {resp_telegram.text}")
+
+            if resp_telegram.status_code != 200:
+                print("⚠️ Error al enviar mensaje de Telegram")
+        except Exception as e:
+            print(f"❌ Excepción al enviar mensaje de Telegram: {e}")
+
 
     return {"ok": True}
