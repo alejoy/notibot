@@ -26,10 +26,3 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: python main.py
-
-      - name: Subir lista de suscriptores como artifact
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: subscribers
-          path: subscribers.txt
