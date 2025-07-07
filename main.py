@@ -85,12 +85,27 @@ TONOS_POSIBLES = ["libertario", "crítico al neoliberalismo", "neutral informati
 
 SUBSCRIBERS_FILE = "subscribers.txt"
 
-def cargar_chat_ids():
-    """Lee los chat_id suscriptos desde un archivo de texto"""
-    if os.path.exists(SUBSCRIBERS_FILE):
-        with open(SUBSCRIBERS_FILE, "r") as f:
-            return [line.strip() for line in f if line.strip()]
-    return []
+def obtener_chat_ids():
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+
+    try:
+        response = requests.get(
+            f"{SUPABASE_URL}/rest/v1/subscribers",
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}"
+            }
+        )
+        if response.status_code == 200:
+            datos = response.json()
+            return [item["chat_id"] for item in datos]
+        else:
+            print(f"❌ Error al obtener chat_ids: {response.text}")
+            return []
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return []
     
 def enviar_telegram(mensaje, chat_id):
     """Envía un mensaje por Telegram"""
@@ -301,7 +316,8 @@ def ejecutar_bot():
                           f"\n\n🔗 {link}"
 
                 # Enviar a cada suscriptor
-                for chat_id in suscriptores:
+                 chat_ids = obtener_chat_ids()
+                 for chat_id in chat_ids:
                     if enviar_telegram(mensaje, chat_id):
                         print(f"✅ Enviado a {chat_id}")
                     else:
