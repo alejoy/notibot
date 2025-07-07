@@ -8,10 +8,23 @@ on:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    environment: os 
+
     steps:
       - name: Clonar el repositorio
         uses: actions/checkout@v3
+
+      - name: Descargar archivo de suscriptores previo (si existe)
+        uses: actions/download-artifact@v4
+        with:
+          name: subscribers
+          path: ./data
+        continue-on-error: true
+
+      - name: Mover archivo si existe
+        run: |
+          if [ -f "./data/subscribers.txt" ]; then
+            mv ./data/subscribers.txt ./subscribers.txt
+          fi
 
       - name: Configurar Python
         uses: actions/setup-python@v4
@@ -21,9 +34,14 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
-      - name: Ejecutar script
+      - name: Ejecutar script principal
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          DESTINATARIO_GENERAL: ${{ secrets.DESTINATARIO_GENERAL }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: python main.py
+
+      - name: Guardar suscriptores como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: subscribers
+          path: subscribers.txt
