@@ -2,7 +2,7 @@ name: Ejecutar resumen bot
 
 on:
   schedule:
-    - cron: '0 11 * * *'  # 11:00 UTC = 8:00 AM Argentina
+    - cron: '0 11 * * *'  # 08:00 AM Argentina (UTC-3)
   workflow_dispatch:       # Permite ejecutarlo manualmente desde GitHub
 
 jobs:
@@ -13,18 +13,11 @@ jobs:
       - name: Clonar el repositorio
         uses: actions/checkout@v3
 
-      - name: Descargar archivo de suscriptores previo (si existe)
-        uses: actions/download-artifact@v4
+      - name: Descargar lista de suscriptores (si existe)
+        continue-on-error: true
+        uses: actions/download-artifact@v3
         with:
           name: subscribers
-          path: ./data
-        continue-on-error: true
-
-      - name: Mover archivo si existe
-        run: |
-          if [ -f "./data/subscribers.txt" ]; then
-            mv ./data/subscribers.txt ./subscribers.txt
-          fi
 
       - name: Configurar Python
         uses: actions/setup-python@v4
@@ -34,14 +27,15 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
-      - name: Ejecutar script principal
+      - name: Ejecutar script
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: python main.py
 
-      - name: Guardar suscriptores como artefacto
-        uses: actions/upload-artifact@v4
+      - name: Subir lista de suscriptores como artifact
+        if: always()
+        uses: actions/upload-artifact@v3
         with:
           name: subscribers
           path: subscribers.txt
