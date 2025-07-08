@@ -86,7 +86,8 @@ TONOS_POSIBLES = ["libertario", "crítico al neoliberalismo", "neutral informati
 def obtener_chat_ids():
     SUPABASE_URL = os.getenv("SUPABASE_URL")
     SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
+    print(f"DEBUG - SUPABASE_URL: {SUPABASE_URL}")
+    print(f"DEBUG - SUPABASE_KEY: {'set' if SUPABASE_KEY else 'NOT SET'}")
     try:
         response = requests.get(
             f"{SUPABASE_URL}/rest/v1/subscribers?select=chat_id,nombre",
