@@ -87,7 +87,7 @@ def obtener_chat_ids():
 
     try:
         response = requests.get(
-            f"{SUPABASE_URL}/rest/v1/subscribers",
+            f"{SUPABASE_URL}/rest/v1/subscribers?select=chat_id,nombre",
             headers={
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}"
@@ -95,7 +95,7 @@ def obtener_chat_ids():
         )
         if response.status_code == 200:
             datos = response.json()
-            return [item["chat_id"] for item in datos]
+            return [(item["chat_id"], item.get("nombre", "")) for item in datos]
         else:
             print(f"❌ Error al obtener chat_ids: {response.text}")
             return []
