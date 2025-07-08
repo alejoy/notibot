@@ -17,6 +17,12 @@ logger = logging.getLogger(__name__)
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
+# Supabase Config - usar variables de entorno
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+print(f"DEBUG - SUPABASE_URL: {SUPABASE_URL}")
+print(f"DEBUG - SUPABASE_KEY: {'set' if SUPABASE_KEY else 'NOT SET'}")
+
 # Validar que existan las variables
 if not TELEGRAM_BOT_TOKEN:
     logger.error("❌ Falta TELEGRAM_BOT_TOKEN en variables de entorno")
@@ -84,10 +90,7 @@ TONOS_POSIBLES = ["libertario", "crítico al neoliberalismo", "neutral informati
 # --- FUNCIONES ---
 
 def obtener_chat_ids():
-    SUPABASE_URL = os.getenv("SUPABASE_URL")
-    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-    print(f"DEBUG - SUPABASE_URL: {SUPABASE_URL}")
-    print(f"DEBUG - SUPABASE_KEY: {'set' if SUPABASE_KEY else 'NOT SET'}")
+
     try:
         response = requests.get(
             f"{SUPABASE_URL}/rest/v1/subscribers?select=chat_id,nombre",
