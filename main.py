@@ -310,14 +310,14 @@ def ejecutar_bot():
                     else:
                         resumenes.append(f"🗣 *{tono.capitalize()}*\n[No se pudo generar resumen]")
                 
-                # Construir mensaje final
+  # Construir mensaje final
                 mensaje = f"📰 *{sitio['nombre']} - Comparativa de enfoques*\n\n" + \
                           "\n\n".join(resumenes) + \
                           f"\n\n🔗 {link}"
 
                 # Enviar a cada suscriptor
-                 chat_ids = obtener_chat_ids()
-                 for chat_id in chat_ids:
+                chat_ids = obtener_chat_ids()
+                for chat_id in chat_ids:
                     if enviar_telegram(mensaje, chat_id):
                         print(f"✅ Enviado a {chat_id}")
                     else:
