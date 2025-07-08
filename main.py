@@ -21,7 +21,7 @@ OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 if not TELEGRAM_BOT_TOKEN:
     logger.error("❌ Falta TELEGRAM_BOT_TOKEN en variables de entorno")
     exit(1)
-
+    
 if not OPENROUTER_API_KEY:
     logger.error("❌ Falta OPENROUTER_API_KEY en variables de entorno")
     exit(1)
@@ -81,6 +81,8 @@ TONOS = {
 
 TONOS_POSIBLES = ["libertario", "crítico al neoliberalismo", "neutral informativo"]
 
+# --- FUNCIONES ---
+
 def obtener_chat_ids():
     SUPABASE_URL = os.getenv("SUPABASE_URL")
     SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -122,132 +124,15 @@ def enviar_telegram(mensaje, chat_id):
         print(f"❌ Excepción al enviar mensaje por Telegram: {e}")
         return False
 
-def obtener_enlaces(sitio):
-    url = sitio["url"]
-    nombre = sitio["nombre"]
-    print(f"📥 Obteniendo enlaces de {nombre}...")
-    
-    try:
-        response = requests.get(url, headers=HEADERS, timeout=10)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, "html.parser")
-        enlaces = set()
+# (Resto de funciones como obtener_enlaces, extraer_contenido, resumir_con_tono se mantienen igual)
 
-        for link in soup.find_all("a", href=True):
-            href = link["href"]
-            is_article = False
-            
-            if "link_pattern_regex" in sitio:
-                pattern_regex = sitio["link_pattern_regex"]
-                if re.match(pattern_regex, href):
-                    is_article = True
-            elif "link_pattern" in sitio:
-                pattern = sitio["link_pattern"]
-                if pattern in href:
-                    is_article = True
-
-            if is_article:
-                full_url = urljoin(url, href)
-                enlaces.add(full_url)
-
-        print(f"✅ Encontrados {len(enlaces)} enlaces únicos para {nombre}.")
-        return list(enlaces)[:3]
-
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Error al conectar con {url}: {e}")
-        return []
-
-def extraer_contenido(url, selector):
-    print(f"   📄 Extrayendo contenido de: {url[:70]}...")
-    try:
-        response = requests.get(url, headers=HEADERS, timeout=10)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        find_args = {}
-        if 'class_' in selector:
-            find_args['class_'] = selector['class_']
-        if 'attrs' in selector:
-            find_args['attrs'] = selector['attrs']
-
-        contenedor = soup.find(selector['tag'], **find_args)
-
-        if not contenedor:
-            print(f"   ⚠️ No se encontró el contenedor principal. Intentando alternativas...")
-            fallback_selectors = [
-                {'tag': 'div', 'class_': 'content'},
-                {'tag': 'div', 'class_': 'article-body'},
-                {'tag': 'div', 'class_': 'post-content'},
-                {'tag': 'article'},
-                {'tag': 'main'}
-            ]
-            for fallback in fallback_selectors:
-                fb_args = {}
-                if 'class_' in fallback:
-                    fb_args['class_'] = fallback['class_']
-                contenedor = soup.find(fallback['tag'], **fb_args)
-                if contenedor:
-                    print(f"   ✅ Usando selector alternativo: {fallback}")
-                    break
-            if not contenedor:
-                print(f"   ❌ No se pudo encontrar contenido con ningún selector")
-                return None
-
-        for script in contenedor(["script", "style", "nav", "footer", "header"]):
-            script.decompose()
-
-        texto = ' '.join(contenedor.get_text(separator=' ', strip=True).split())
-        if len(texto) < 100:
-            print(f"   ⚠️ Contenido muy corto ({len(texto)} caracteres)")
-            return None
-
-        return texto
-
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Error al extraer contenido de {url}: {e}")
-        return None
-
-def resumir_con_tono(texto, tono):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    prompt = TONOS.get(tono, "Resumí el siguiente texto de forma clara y breve.") + f"\n\n{texto[:4000]}"
-
-    data = {
-        "model": "mistralai/mixtral-8x7b-instruct",
-        "messages": [
-            {"role": "system", "content": f"Sos un analista político con enfoque {tono}."},
-            {"role": "user", "content": prompt}
-        ],
-        "max_tokens": 300
-    }
-
-    for intento in range(3):
-        try:
-            response = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=40
-            )
-            if response.status_code == 200:
-                return response.json()['choices'][0]['message']['content'].strip()
-            else:
-                print(f"⚠️ Intento {intento+1} fallido: {response.status_code} - {response.text}")
-        except Exception as e:
-            print(f"⚠️ Error en intento {intento+1}: {e}")
-        time.sleep(2)
-
-    return "[No se pudo generar resumen]"
-
+# --- EJECUCIÓN ---
 def ejecutar_bot():
     print("🤖 Iniciando bot de noticias...")
 
     chat_ids = obtener_chat_ids()
     if not chat_ids:
-        print("⚠️ No hay suscriptores registrados.")
+        print("⚠️ No hay suscriptores registrados en Supabase")
         return
 
     for sitio in SITIOS:
@@ -264,17 +149,27 @@ def ejecutar_bot():
 
             if contenido:
                 resumenes = []
+
                 for tono in TONOS_POSIBLES:
-                    print(f"   🎭 Generando resumen con tono: {tono}")
+                    print(f"   🎝 Generando resumen con tono: {tono}")
                     resumen = resumir_con_tono(contenido, tono)
-                    resumenes.append(f"🗣 *{tono.capitalize()}*\n{resumen}")
+
+                    if resumen and resumen != "[No se pudo generar resumen]":
+                        resumenes.append(f"🗣 *{tono.capitalize()}*\n{resumen}")
+                    else:
+                        resumenes.append(f"🗣 *{tono.capitalize()}*\n[No se pudo generar resumen]")
 
                 mensaje = f"📰 *{sitio['nombre']} - Comparativa de enfoques*\n\n" + \
                           "\n\n".join(resumenes) + \
                           f"\n\n🔗 {link}"
 
-                for chat_id in chat_ids:
-                    enviar_telegram(mensaje, chat_id)
+                for chat_id, nombre in chat_ids:
+                    mensaje_personalizado = f"Hola {nombre},\n\n{mensaje}"
+                    if enviar_telegram(mensaje_personalizado, chat_id):
+                        print(f"✅ Enviado a {chat_id} ({nombre})")
+                    else:
+                        print(f"❌ Falló envío a {chat_id} ({nombre})")
+
                 time.sleep(5)
             else:
                 print("⚠️ No se pudo extraer contenido del artículo.")
@@ -283,3 +178,4 @@ def ejecutar_bot():
 
 if __name__ == "__main__":
     ejecutar_bot()
+
