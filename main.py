@@ -74,12 +74,24 @@ SITIOS = [
 
 # Configuración de tonos
 TONOS = {
-    "libertario": "Analizá esta noticia desde una perspectiva libertaria, enfocándote en la libertad individual, el libre mercado y la limitación del Estado.",
-    "crítico al neoliberalismo": "Analizá esta noticia con una perspectiva crítica al neoliberalismo, enfocándote en desigualdades sociales y el rol del Estado en la protección social.",
-    "neutral informativo": "Resumí esta noticia de forma objetiva y neutral, presentando los hechos principales sin sesgo político."
+    "libertario": (
+        "Analizá el siguiente texto desde una perspectiva libertaria o mileísta. "
+        "Tené en cuenta los principios de libre mercado, reducción del Estado, "
+        "responsabilidad individual, defensa de la propiedad privada y oposición "
+        "al intervencionismo estatal."
+    ),
+    "peronista": (
+        "Analizá el siguiente texto desde una perspectiva peronista. Considerá ejes como "
+        "la justicia social, el rol activo del Estado en la economía, los derechos laborales, "
+        "la soberanía política y económica, y la centralidad del trabajo como ordenador social."
+    ),
+    "neutral": (
+        "Resumí e interpretá el siguiente texto de forma objetiva, sin inclinarte por una ideología "
+        "en particular. Presentá los hechos relevantes con claridad, sin emitir juicios de valor."
+    )
 }
 
-TONOS_POSIBLES = ["libertario", "crítico al neoliberalismo", "neutral informativo"]
+TONOS_POSIBLES = ["libertario", "peronista", "neutral"]
 
 # --- FUNCIONES ---
 
@@ -199,15 +211,23 @@ def resumir_con_tono(texto, tono):
         "Content-Type": "application/json"
     }
 
-    prompt = TONOS.get(tono, "Resumí el siguiente texto de forma clara y breve.") + f"\n\n{texto[:4000]}"
+    # ❗ Eliminás el corte forzado de 4000 caracteres
+    # (Si igual querés poner un tope, podés usar textwrap o rfind para cortar por oración completa)
+    prompt = TONOS.get(tono, "Resumí el siguiente texto de forma clara y breve.") + f"\n\n{texto}"
 
     data = {
         "model": "mistralai/mixtral-8x7b-instruct",
         "messages": [
-            {"role": "system", "content": f"Sos un analista político con enfoque {tono}."},
+            {
+                "role": "system",
+                "content": (
+                    f"Sos un analista político argentino especializado en el enfoque {tono}. "
+                    f"Tu tarea es interpretar noticias desde esta perspectiva, ofreciendo una lectura clara y con argumentos ideológicos."
+                )
+            },
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 300
+        "max_tokens": 1000  # ⬅️ Aumentamos el límite para respuestas más profundas
     }
 
     for intento in range(3):
@@ -228,7 +248,7 @@ def resumir_con_tono(texto, tono):
         time.sleep(2)
 
     return "[No se pudo generar resumen]"
-
+    
 # --- EJECUCIÓN ---
 def ejecutar_bot():
     print("🤖 Iniciando bot de noticias...")
