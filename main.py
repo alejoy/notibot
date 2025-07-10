@@ -5,6 +5,7 @@ import time
 import re
 import os
 import logging
+import html
 
 # Configurar logging
 logging.basicConfig(
@@ -120,14 +121,23 @@ def obtener_chat_ids():
 def enviar_telegram(mensaje, chat_id):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
-    # ⚠️ Cortar mensaje si excede el límite de Telegram (4096)
+    # 🔒 Escapar caracteres conflictivos de Markdown
+    def escapar_markdown(texto):
+        caracteres_escapar = r"_*[]()~`>#+-=|{}.!"
+        for c in caracteres_escapar:
+            texto = texto.replace(c, f"\\{c}")
+        return texto
+
+    # Cortar mensaje si excede el límite de Telegram
     if len(mensaje) > 4000:
         mensaje = mensaje[:3980] + "\n\n...(mensaje recortado)"
+
+    mensaje = escapar_markdown(mensaje)
 
     data = {
         "chat_id": chat_id,
         "text": mensaje,
-        "parse_mode": "Markdown"
+        "parse_mode": "MarkdownV2"
     }
 
     try:
