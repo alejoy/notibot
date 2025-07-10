@@ -204,6 +204,27 @@ def extraer_contenido(url, selector):
     except requests.exceptions.RequestException as e:
         print(f"❌ Error al extraer contenido de {url}: {e}")
         return None
+        
+def dividir_en_bloques(texto, max_len=3000):
+    bloques = []
+    while len(texto) > max_len:
+        corte = texto.rfind('.', 0, max_len)
+        if corte == -1:
+            corte = max_len
+        bloques.append(texto[:corte+1].strip())
+        texto = texto[corte+1:].strip()
+    if texto:
+        bloques.append(texto)
+    return bloques
+
+def analizar_bloques_con_tono(texto, tono):
+    bloques = dividir_en_bloques(texto)
+    resultados = []
+    for i, bloque in enumerate(bloques):
+        print(f"📦 Analizando bloque {i+1} de {len(bloques)}...")
+        resultado = resumir_con_tono(bloque, tono)
+        resultados.append(f"🔹 Parte {i+1}:\n{resultado}")
+    return "\n\n".join(resultados)
 
 def resumir_con_tono(texto, tono):
     headers = {
@@ -211,8 +232,6 @@ def resumir_con_tono(texto, tono):
         "Content-Type": "application/json"
     }
 
-    # ❗ Eliminás el corte forzado de 4000 caracteres
-    # (Si igual querés poner un tope, podés usar textwrap o rfind para cortar por oración completa)
     prompt = TONOS.get(tono, "Resumí el siguiente texto de forma clara y breve.") + f"\n\n{texto}"
 
     data = {
@@ -227,7 +246,7 @@ def resumir_con_tono(texto, tono):
             },
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 1000  # ⬅️ Aumentamos el límite para respuestas más profundas
+        "max_tokens": 1000  # Podés subirlo si necesitás más detalle
     }
 
     for intento in range(3):
@@ -275,7 +294,7 @@ def ejecutar_bot():
 
                 for tono in TONOS_POSIBLES:
                     print(f"   🎝 Generando resumen con tono: {tono}")
-                    resumen = resumir_con_tono(contenido, tono)
+                    resumen = analizar_bloques_con_tono(contenido, tono)
 
                     if resumen and resumen != "[No se pudo generar resumen]":
                         resumenes.append(f"🗣 *{tono.capitalize()}*\n{resumen}")
