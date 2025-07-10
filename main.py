@@ -119,11 +119,17 @@ def obtener_chat_ids():
 
 def enviar_telegram(mensaje, chat_id):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+
+    # ⚠️ Cortar mensaje si excede el límite de Telegram (4096)
+    if len(mensaje) > 4000:
+        mensaje = mensaje[:3980] + "\n\n...(mensaje recortado)"
+
     data = {
         "chat_id": chat_id,
         "text": mensaje,
         "parse_mode": "Markdown"
     }
+
     try:
         response = requests.post(url, data=data)
         if response.status_code == 200:
